@@ -1,8 +1,8 @@
 import React from "react";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { Routes, Route } from "react-router-dom";
-import PaymentForm from './Pages/Payment';
-import AboutUsPage from './Pages/AboutUs';
+import PaymentForm from './pages/Payment';
+import AboutUsPage from './pages/AboutUs';
 import PaymentSuccess from './pages/PaymentSuccess';
 
 import { HomePage } from "./pages/HomePage";

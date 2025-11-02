@@ -8,12 +8,60 @@ app.use(express.json());
 
 const PORT = process.env.PORT;
 
-// Fetching all products
+// ------------------------- AUTHENTICATION -------------------------
+
+// Register a new user
+app.post("/api/auth/register", async (req, res) => {
+  const { email, password } = req.body;
+  try {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password
+    });
+
+    if (error) throw error;
+    res.json({ message: "User registered successfully", user: data.user });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Login user
+app.post("/api/auth/login", async (req, res) => {
+  const { email, password } = req.body;
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+
+    if (error) throw error;
+    res.json({ message: "Login successful", session: data.session });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Middleware to protect routes
+const authenticate = async (req, res, next) => {
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) return res.status(401).json({ error: "Unauthorized" });
+
+  const { data, error } = await supabase.auth.getUser(token);
+  if (error || !data.user) return res.status(401).json({ error: "Unauthorized" });
+
+  req.user = data.user;
+  next();
+};
+
+// ------------------------- PRODUCTS -------------------------
+
 app.get("/api/products", async (req, res) => {
   const { category, search } = req.query;
   let query = supabase.from("products").select("*");
+
   if (category) query = query.eq("category", category);
-  if (search) { query = query.or(`name.ilike.%${search}%,category.ilike.%${search}%`); }
+  if (search) query = query.or(`name.ilike.%${search}%,category.ilike.%${search}%`);
 
   const { data, error } = await query;
 
@@ -21,24 +69,20 @@ app.get("/api/products", async (req, res) => {
   res.json(data);
 });
 
-
-// Posting new product
-app.post("/api/products", async (req, res) => {
+app.post("/api/products", authenticate, async (req, res) => {
   const { name, description, price, image_url, category, rating, rating_count, rating_url } = req.body;
 
-  const { data, error } = await supabase 
-  .from("products")
-  .insert([{ name, description, price, image_url, category, rating, rating_count, rating_url }])
-  .select();
+  const { data, error } = await supabase
+    .from("products")
+    .insert([{ name, description, price, image_url, category, rating, rating_count, rating_url }])
+    .select();
 
-  if(error) return res.status(400).json({ error });
+  if (error) return res.status(400).json({ error });
   res.json(data);
 });
 
-// Deleting a product
-app.delete("/api/products/:id", async (req, res) => {
+app.delete("/api/products/:id", authenticate, async (req, res) => {
   const { id } = req.params;
-
   const { data, error } = await supabase
     .from("products")
     .delete()
@@ -49,82 +93,25 @@ app.delete("/api/products/:id", async (req, res) => {
   res.json(data);
 });
 
-// Getting cart items for a user
-app.get("/api/cart", async (req, res) => {
-  const { user_id } = req.params;
+// ------------------------- CART -------------------------
+
+app.get("/api/cart", authenticate, async (req, res) => {
+  const user_id = req.user.id;
 
   const { data, error } = await supabase
     .from("cart_items")
     .select(`id, quantity, product_id (id, name, price, image_url, category, rating)`)
-    .eq("user_id", "8e979bfa-b949-44c3-b096-0bb83007babc");
+    .eq("user_id", user_id);
 
   if (error) return res.status(400).json({ error });
   res.json(data);
 });
 
-
-// Deleting a cart item
-app.delete("/api/cart/:id", async (req, res) => {
-  const { id } = req.params;
-
-  const { data, error } = await supabase
-    .from("cart_items")
-    .delete()
-    .eq("id", id)
-    .select();
-
-  if (error) return res.status(400).json({ error });
-  res.json(data);
-});
-
-// Updating cart item quantity
-app.put("/api/cart/update", async (req, res) => {
-  const { id, quantity } = req.body;
-
-  const { data, error } = await supabase
-    .from("cart_items")
-    .update({ quantity })
-    .eq("id", id)
-    .select();
-
-  if (error) return res.status(400).json({ error });
-  res.json(data);
-});
-
-// app.get("/api/cart/:user_id", async (req, res) => {
-//   const { user_id } = req.params;
-
-//   try {
-//     const { data, error } = await supabase
-//       .from("cart_items")
-//       .select(`
-//         id,
-//         quantity,
-//         products (
-//           id,
-//           name,
-//           price,
-//           image_url,
-//           category,
-//           rating
-//         )
-//       `)
-//       .eq("user_id", "8e979bfa-b949-44c3-b096-0bb83007babc");
-
-//     if (error) throw error;
-//     res.json(data);
-//   } catch (err) {
-//     console.error("Error fetching cart items:", err.message);
-//     res.status(500).json({ error: err.message });
-//   }
-// });
-
-// Adding item to cart
-app.post("/cart/add", async (req, res) => {
-  const { user_id, product_id, quantity } = req.body;
+app.post("/api/cart/add", authenticate, async (req, res) => {
+  const user_id = req.user.id;
+  const { product_id, quantity } = req.body;
 
   try {
-    // checking if product is already in user's cart
     const { data: existing } = await supabase
       .from("cart_items")
       .select("*")
@@ -133,7 +120,6 @@ app.post("/cart/add", async (req, res) => {
       .single();
 
     if (existing) {
-      // I'm updating just the quantity if it exists
       const { data, error } = await supabase
         .from("cart_items")
         .update({ quantity: existing.quantity + quantity })
@@ -144,7 +130,6 @@ app.post("/cart/add", async (req, res) => {
       return res.json(data[0]);
     }
 
-    // If cart item doesn't exist, I'm inserting a new cart item row
     const { data, error } = await supabase
       .from("cart_items")
       .insert([{ user_id, product_id, quantity }])
@@ -157,4 +142,34 @@ app.post("/cart/add", async (req, res) => {
   }
 });
 
-app.listen(PORT, () => console.log(`Backend running on http://localhost:${PORT}`));
+app.put("/api/cart/update", authenticate, async (req, res) => {
+  const { id, quantity } = req.body;
+
+  const { data, error } = await supabase
+    .from("cart_items")
+    .update({ quantity })
+    .eq("id", id)
+    .select();
+
+  if (error) return res.status(400).json({ error });
+  res.json(data);
+});
+
+app.delete("/api/cart/:id", authenticate, async (req, res) => {
+  const { id } = req.params;
+
+  const { data, error } = await supabase
+    .from("cart_items")
+    .delete()
+    .eq("id", id)
+    .select();
+
+  if (error) return res.status(400).json({ error });
+  res.json(data);
+});
+const payRoutes = require('./routes/pay');
+app.use('/api/pay', payRoutes);
+
+
+// ------------------------- EXPORT APP -------------------------
+module.exports = app;

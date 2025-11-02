@@ -1,0 +1,41 @@
+/* src/AuthStyles.css */
+
+/* Define the primary color to match the template */
+:root {
+    --bs-primary: #366af3;
+    --bs-primary-rgb: 54, 106, 243;
+}
+
+/* Custom primary button styles */
+.btn-primary {
+    --bs-btn-bg: var(--bs-primary);
+    --bs-btn-border-color: var(--bs-primary);
+    --bs-btn-hover-bg: #2957c8;
+    --bs-btn-hover-border-color: #2957c8;
+    --bs-btn-active-bg: #1c3f8f;
+    --bs-btn-active-border-color: #1c3f8f;
+    transition: all 0.2s ease-in-out;
+}
+
+/* Custom Input Focus Style (to match the template's focus look) */
+.form-control:focus, 
+.input-group-text:focus-within {
+    border-color: var(--bs-primary) !important;
+    box-shadow: 0 0 0 0.25rem rgba(54, 106, 243, 0.25) !important; 
+}
+
+/* Fix for input group borders to look seamless */
+.input-group-text {
+    border-right: none !important;
+    background-color: #f8f9fa; /* Slightly off-white for contrast */
+}
+
+/* Ensure the input group text border matches the input's default border */
+.input-group-text.text-muted {
+    border-color: #dee2e6 !important;
+}
+
+/* General Link Style */
+a.text-primary {
+    font-weight: 500;
+}

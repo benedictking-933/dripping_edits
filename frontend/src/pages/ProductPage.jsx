@@ -1,12 +1,12 @@
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "../supabaseClient";
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
-import { useEffect, useState } from "react";
 import searchIcon from "../assets/icons/magnifying-glass.png";
 import viewIcon from "../assets/icons/view.png";
 import cartIcon from "../assets/icons/shopping-cart.png";
-import axios from "axios";
 import "./ProductPage.css";
-import { useNavigate } from "react-router-dom";
 
 export function ProductPage() {
   const [products, setProducts] = useState([]);
@@ -14,145 +14,135 @@ export function ProductPage() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const goToDetails = (id) => {
-    navigate(`/products/${id}`);
-  };
+
+  const goToDetails = (id) => navigate(`/products/${id}`);
 
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true);
-      let url = "http://localhost:4000/api/products";
+      try {
+        let query = supabase.from("products").select("*");
 
-      const params = new URLSearchParams();
-      if (category !== "All") params.append("category", category);
-      if (search.trim() !== "") params.append("search", search);
-      if ([...params].length > 0) {
-        url += `?${params.toString()}`;
+        if (category !== "All") query = query.eq("category", category);
+        if (search.trim() !== "") query = query.ilike("name", `%${search}%`);
+
+        const { data, error } = await query;
+        if (error) throw error;
+
+        const productsWithImages = await Promise.all(
+          data.map(async (product) => {
+            if (product.image_path) {
+              const { data: imageData } = supabase.storage
+                .from("product-images")
+                .getPublicUrl(product.image_path);
+              product.image_url = imageData.publicUrl;
+            }
+            return product;
+          })
+        );
+
+        setProducts(productsWithImages || []);
+      } catch (error) {
+        console.error("Error fetching products:", error.message);
+        setProducts([]);
+      } finally {
+        setLoading(false);
       }
-      const response = await axios.get(url);
-      setProducts(response.data);
-      setLoading(false);
     };
+
     fetchProducts();
   }, [category, search]);
 
-  const addToCart = async (product) => {
-    try {
-      await axios.post("http://localhost:4000/cart/add", {
-        user_id: "8e979bfa-b949-44c3-b096-0bb83007babc",
-        product_id: product.id,
-        quantity: 1,
-      });
-      console.log("Product added to cart");
-      alert("Product added to cart");
-    } catch (error) {
-      console.error("Error adding to cart:", error);
-    }
+  const addToCart = (product) => {
+    // You can later integrate your cart logic here
+    alert(`Added ${product.name} to cart`);
   };
 
   return (
     <>
       <title>Shop Page</title>
-
       <Header />
-      <div className="product-page">
-        <div className="search">
-          <div>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="select"
-            >
-              <option value="All">All Categories</option>
-              <option value="Phones">Phones</option>
-              <option value="Laptops">Laptops</option>
-              <option value="Desktops">Desktops</option>
-              <option value="Gaming">Gaming</option>
-            </select>
+      <div className="product-page container">
+
+        {/* Search Section */}
+        <div className="search-bar-wrapper d-flex justify-content-between align-items-center my-4">
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className="form-select category-select"
+          >
+            <option value="All">All Categories</option>
+            <option value="Phones">Phones</option>
+            <option value="Laptops">Laptops</option>
+            <option value="Desktops">Desktops</option>
+            <option value="Gaming">Gaming</option>
+          </select>
+
+          <div className="search-input-wrapper d-flex flex-grow-1 mx-3">
+            <input
+              type="text"
+              className="form-control search-input"
+              placeholder="Search for products..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <button className="btn search-btn">
+              <img src={searchIcon} alt="Search" />
+            </button>
           </div>
-          <input
-            className="search-bar"
-            type="text"
-            placeholder="Search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-
-          <button className="search-button">
-            <img className="search-icon" src={searchIcon} alt="Search" />
-          </button>
         </div>
 
-        <div className="directory">
-          <h5>{category.toUpperCase()}</h5>
-          <p>Home&gt;Shop Page&gt;{category}</p>
-        </div>
-        <div className="products-grid">
-          {loading && (
-            <div className="todo-loading">
-              <div className="loader"></div>Loading products...
+        {/* Products Grid */}
+        <div className="products-grid row">
+          {loading ? (
+            <div className="text-center w-100 py-5">
+              <div className="loader mb-2"></div>
+              Loading products...
             </div>
-          )}
-          {products.map((product) => {
-            return (
-              <div key={product.id} className="product-container">
-                <div className="product-image-container">
-                  <img className="product-image" src={product.image_url} />
-                  <div className="product-overlay">
-                    <button
-                      className="view-details-button"
-                      onClick={() => goToDetails(product.id)}
-                    >
-                      <img src={viewIcon} alt="View Details" />
-                    </button>
-
-                    <button
-                      onClick={() => addToCart(product)}
-                      className="add-to-cart-button"
-                    >
-                      <img src={cartIcon} />
-                    </button>
+          ) : products.length === 0 ? (
+            <div className="text-center w-100 py-5">No products found.</div>
+          ) : (
+            products.map((product) => (
+              <div key={product.id} className="col-lg-3 col-md-4 col-sm-6 mb-4">
+                <div className="product-card shadow-sm rounded position-relative overflow-hidden">
+                  <div className="product-image-container position-relative">
+                    <img
+                      className="product-image w-100"
+                      src={product.image_url || "/placeholder.png"}
+                      alt={product.name}
+                    />
+                    <div className="product-overlay d-flex justify-content-center align-items-center">
+                      <button
+                        onClick={() => goToDetails(product.id)}
+                        className="overlay-btn view-btn me-2"
+                        title="View Details"
+                      >
+                        <img src={viewIcon} alt="View" />
+                      </button>
+                      <button
+                        onClick={() => addToCart(product)}
+                        className="overlay-btn cart-btn"
+                        title="Add to Cart"
+                      >
+                        <img src={cartIcon} alt="Cart" />
+                      </button>
+                    </div>
                   </div>
-                </div>
-                <div className="product-name">{product.name}</div>
-
-                <div className="product-rating-container">
-                  <img
-                    className="product-rating-stars"
-                    src={product.rating_url}
-                  />
-                  <div className="product-rating-count link-primary">
-                    {product.rating_count}
+                  <div className="product-info text-center p-2">
+                    <div className="product-name fw-bold">{product.name}</div>
+                    <div className="product-price text-primary">
+                      {product.price?.toLocaleString()} FCFA
+                    </div>
                   </div>
-                </div>
-
-                <div className="product-price">
-                  {product.price.toLocaleString()} FCFA
                 </div>
               </div>
-            );
-          })}
-        </div>
-
-        <div className="update">
-          <span className="line">
-            <hr />
-          </span>
-          <h4>Stay Up To Date!</h4>
-          <span className="line">
-            <hr />
-          </span>
-        </div>
-        <div className="subscribe">
-          <h4>Join Our Newsletter</h4>
-          <div className="email">
-            <input type="text" placeholder="youremail@gmail.com" />
-            <button className="subs-btn">Subscribe</button>
-          </div>
+            ))
+          )}
         </div>
       </div>
-
       <Footer />
     </>
   );
 }
+
+export default ProductPage;

@@ -1,0 +1,298 @@
+.home-page {
+  margin-top: 60px;
+  padding: 1rem 0;
+  flex: 1;
+}
+
+body {
+  font-family: "Poppins", sans-serif;
+  background-color: #ffffff;
+  color: #333;
+}
+
+.navbar {
+  background-color: #f8fbff;
+}
+
+.navbar-brand {
+  font-weight: 700;
+  font-size: 1.8rem;
+  color: #4aa3ff !important;
+}
+
+.btn-login,
+.btn-signup {
+  border-radius: 6px;
+  padding: 6px 18px;
+  font-weight: 500;
+}
+
+.btn-login {
+  background-color: #4aa3ff;
+  color: #fff;
+  border: none;
+}
+
+.hero-text {
+  margin-left: 40px;
+}
+.btn-signup {
+  background-color: #e7f3ff;
+  color: #4aa3ff;
+  border: none;
+}
+
+.hero-section {
+  background-color: #e7f3ff;
+  padding: 60px 0;
+}
+
+.container .d-flex .align-items {
+  background-color: #e7f3ff;
+}
+.hero-section h2 {
+  font-weight: 700;
+  font-size: 2.5rem;
+}
+
+.hero-img {
+  max-width: 100%;
+}
+
+.section-title {
+  text-align: center;
+  margin: 50px 0 30px;
+  font-weight: 700;
+}
+
+.product-card {
+  border-radius: 12px;
+  padding: 20px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s;
+}
+
+.product-card:hover {
+  transform: translateY(-5px);
+}
+
+.product-card img {
+  width: 100%;
+  border-radius: 10px;
+}
+
+.col-md-3{
+  z-index: 0;
+}
+.hero-section .container {
+  background-color: #e7f3ff;
+}
+.discount-tag {
+  background-color: #4aa3ff;
+  color: #fff;
+  border-radius: 50px;
+  font-size: 0.8rem;
+  padding: 3px 8px;
+  font-weight: 500;
+  position: absolute;
+  top: 10px;
+  left: 10px;
+}
+
+.brand-logos img {
+  height: 40px;
+  margin: 0 15px;
+}
+
+.newsletter {
+  background-color: #e7f3ff;
+  border-radius: 50px;
+  padding: 25px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.newsletter input {
+  border: none;
+  outline: none;
+  flex: 1;
+  padding: 12px 20px;
+  border-radius: 50px;
+  margin-right: 10px;
+}
+
+.newsletter button {
+  background-color: #4aa3ff;
+  border: none;
+  border-radius: 50px;
+  padding: 12px 25px;
+  color: #fff;
+  font-weight: 500;
+}
+
+footer {
+  background-color: #0a0a0a;
+  color: #fff;
+  padding: 50px 0;
+  margin-top: 60px;
+}
+
+footer h5 {
+  color: #4aa3ff;
+  margin-bottom: 15px;
+}
+
+footer a {
+  color: #ccc;
+  text-decoration: none;
+  display: block;
+  margin-bottom: 8px;
+}
+
+footer a:hover {
+  color: #fff;
+}
+
+.social-icons i {
+  font-size: 1.3rem;
+  margin-right: 10px;
+}
+
+.copyright {
+  text-align: center;
+  margin-top: 30px;
+  font-size: 0.9rem;
+  color: #aaa;
+}
+.home-page .update {
+  display: flex;
+  width: 600px;
+  margin: 0 auto;
+  justify-content: center;
+}
+.home-page .update h4 {
+  margin: 0 12px;
+}
+
+.home-page .update hr {
+  width: 180px;
+  border: 2px solid black;
+}
+
+.home-page .subscribe {
+  display: flex;
+  background-color: rgb(0, 168, 255);
+  border: none;
+  border-radius: 8px;
+  padding: 6px 12px;
+  width: 800px;
+  margin: 0 auto;
+  justify-content: space-between;
+}
+.home-page .subscribe h4 {
+  color: white;
+}
+.home-page .subscribe .email {
+  border: none;
+  background-color: white;
+  border-radius: 6px;
+  padding: 4px 8px;
+}
+.home-page .subscribe input {
+  border: none;
+}
+.home-page .subscribe .subs-btn {
+  border: none;
+  border-radius: 6px;
+  background-color: rgb(0, 168, 255);
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+
+@media (max-width: 500px) {
+  .home-page .subscribe {
+    padding: 2px 5px;
+    width: 300px;
+    font-size: 10px;
+  }
+  .home-page .subscribe h4 {
+    font-size: 10px;
+  }
+  .home-page .subscribe .email {
+    padding: 2px 5px;
+  }
+  .home-page .subscribe .subs-btn {
+    font-size: 10px;
+    font-weight: 500;
+  }
+
+  .home-page .update {
+    display: flex;
+    width: 250px;
+    margin: 0 auto;
+  }
+  .home-page .update h4 {
+    margin: 0 8px;
+    font-size: 12px;
+  }
+
+  .home-page .update .line hr {
+    width: 50px;
+    border: 2px solid black;
+  }
+  .hero-text h2{
+    font-size: 18px;
+  }
+  .hero-text {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 340px) {
+  .subscribe {
+    padding: 2px 5px;
+    width: 180px;
+    font-size: 10px;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 700px) {
+  .subscribe {
+    padding: 2px 5px;
+    width: 400px;
+    font-size: 10px;
+  }
+  .subscribe .email {
+    padding: 2px 5px;
+  }
+  .subscribe .subs-btn {
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .update {
+    display: flex;
+    width: 300px;
+    margin: 0 auto;
+  }
+  .update h4 {
+    margin: 0 8px;
+    font-size: 12px;
+  }
+
+  .update .line hr {
+    width: 90px;
+    border: 2px solid black;
+  }
+  .hero-text h2{
+    font-size: 22px;
+  }
+  .hero-text {
+    margin-left: 0;
+  }
+}

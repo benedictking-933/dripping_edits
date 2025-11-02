@@ -1,8 +1,8 @@
-import { Header } from "../components/Header";
-import { Footer } from "../components/Footer";
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import axios from "axios";
+import { supabase } from "../supabaseClient";
+import { Header } from "../components/Header";
+import { Footer } from "../components/Footer";
 import "./ProductDetail.css";
 
 export function ProductDetail() {
@@ -14,63 +14,69 @@ export function ProductDetail() {
   const [mainImage, setMainImage] = useState(null);
 
   useEffect(() => {
-    const fetch = async () => {
+    const fetchProduct = async () => {
       setLoading(true);
       try {
-        let res;
-        try {
-          res = await axios.get(`http://localhost:4000/api/products/${id}`);
-        } catch (e) {
-          const all = await axios.get("http://localhost:4000/api/products");
-          res = { data: all.data.find(p => p.id === id) };
-        }
+        const { data: prodData, error: prodErr } = await supabase
+          .from("products")
+          .select("*")
+          .eq("id", id)
+          .single();
 
-        const prod = res.data;
-        if (!prod) throw new Error("Product not found");
-        setProduct(prod);
-        setMainImage(prod.main_image_url || (prod.gallery_urls && prod.gallery_urls[0]) || prod.image_url);
+        if (prodErr) throw prodErr;
+        if (!prodData) throw new Error("Product not found");
 
-        try {
-          const rel = await axios.get(`http://localhost:4000/api/products/${id}/related`);
-          setRelated(rel.data || []);
-        } catch (e) {
-          const all = await axios.get("http://localhost:4000/api/products");
-          setRelated(
-            all.data.filter(p => p.category === prod.category && p.id !== prod.id).slice(0, 4)
-          );
-        }
+        setProduct(prodData);
+        setMainImage(prodData.main_image_url || prodData.image_url);
+
+        // Related products
+        const { data: relData } = await supabase
+          .from("products")
+          .select("*")
+          .eq("category", prodData.category)
+          .neq("id", id)
+          .limit(4);
+
+        setRelated(relData || []);
       } catch (err) {
-        console.error("Product load failed", err);
+        console.error("Error fetching product:", err.message);
         setProduct(null);
+        setRelated([]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetch();
+    fetchProduct();
   }, [id]);
 
-  const changeQty = (delta) => setQty((prev) => Math.max(1, prev + delta));
+  const changeQty = (delta) => setQty(prev => Math.max(1, prev + delta));
 
-  const addToCart = async () => {
+  const addToCart = () => {
     if (!product) return;
-    try {
-      await axios.post("http://localhost:4000/cart/add", {
-        user_id: "8e979bfa-b949-44c3-b096-0bb83007babc",
-        product_id: product.id,
+
+    const existingCart = JSON.parse(localStorage.getItem("cart")) || [];
+
+    const existingIndex = existingCart.findIndex(item => item.id === product.id);
+
+    if (existingIndex >= 0) {
+      existingCart[existingIndex].quantity += qty;
+    } else {
+      existingCart.push({
+        id: product.id,
+        name: product.name,
+        price: product.price,
         quantity: qty,
+        image_url: product.main_image_url || product.image_url
       });
-      alert("Product added to cart");
-    } catch (err) {
-      console.error("Add to cart failed", err);
-      alert("Failed to add to cart");
     }
+
+    localStorage.setItem("cart", JSON.stringify(existingCart));
+    alert(`${product.name} (qty: ${qty}) added to cart!`);
   };
 
   if (loading) return <div className="loading">Loading...</div>;
   if (!product) return <div className="notfound">Product not found</div>;
-
-  const htmlDesc = product.description_long || product.description || "";
 
   return (
     <>
@@ -87,18 +93,14 @@ export function ProductDetail() {
               <div className="mainImageBox">
                 <img className="mainImage" src={mainImage} alt={product.name} />
               </div>
-
               <div className="thumbnailRow">
-                {(product.gallery_urls && product.gallery_urls.length
-                  ? product.gallery_urls
-                  : product.image_url
-                  ? [product.image_url]
-                  : []
-                ).map((u, i) => (
-                  <button key={i} className="thumbBtn" onClick={() => setMainImage(u)}>
-                    <img src={u} alt={`${product.name} ${i}`} />
-                  </button>
-                ))}
+                {[product.main_image_url, product.image_url]
+                  .filter(Boolean)
+                  .map((u, i) => (
+                    <button key={i} className="thumbBtn" onClick={() => setMainImage(u)}>
+                      <img src={u} alt={`${product.name} ${i}`} />
+                    </button>
+                  ))}
               </div>
             </div>
           </div>
@@ -107,7 +109,7 @@ export function ProductDetail() {
             <h1 className="title">{product.name}</h1>
 
             <div className="priceRow">
-              <div className="price">{Number(product.price).toFixed(2)} frs</div>
+              <div className="price">{Number(product.price).toFixed(2)} FCFA</div>
               <div className="rating">
                 <span className="ratingStars">{product.rating || 0}</span>
                 <span className="ratingCount">({product.rating_count || 0})</span>
@@ -131,7 +133,6 @@ export function ProductDetail() {
 
               <div className="actionButtons">
                 <button onClick={addToCart} className="primaryBtn">Add To Cart</button>
-                <button className="secondaryBtn">Buy Now</button>
               </div>
 
               <div className="meta">
@@ -145,34 +146,21 @@ export function ProductDetail() {
         <section className="descriptionSection">
           <h3 className="sectionTitle">Description</h3>
           <div className="descriptionText">
-            <div dangerouslySetInnerHTML={{ __html: htmlDesc.replace(/\n/g, "<br/>") }} />
+            <div dangerouslySetInnerHTML={{ __html: (product.description || "").replace(/\n/g, "<br/>") }} />
           </div>
-
-          {/* <div className="specs">
-            <h4>Additional information</h4>
-            {product.specs && Object.keys(product.specs).length ? (
-              <ul>
-                {Object.entries(product.specs).map(([k, v]) => (
-                  <li key={k}><strong>{k}:</strong> {v}</li>
-                ))}
-              </ul>
-            ) : null}
-          </div> */}
         </section>
 
         <section className="relatedSection">
           <h3 className="sectionTitle">Related products</h3>
           <div className="relatedGrid">
             {related.map(r => (
-              <div key={r.id} className="relatedCard">
-                <Link to={`/product/${r.id}`} className="relatedImageWrap">
-                  <img src={r.main_image_url || r.image_url} alt={r.name} />
-                </Link>
+              <Link key={r.id} to={`/products/${r.id}`} className="relatedCard">
+                <img src={r.main_image_url || r.image_url} alt={r.name} />
                 <div className="relatedInfo">
-                  <Link to={`/product/${r.id}`} className="relatedName">{r.name}</Link>
-                  <div className="relatedPrice">{Number(r.price).toFixed(2)} frs</div>
+                  <div className="relatedName">{r.name}</div>
+                  <div className="relatedPrice">{Number(r.price).toFixed(2)} FCFA</div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </section>
@@ -181,3 +169,5 @@ export function ProductDetail() {
     </>
   );
 }
+
+export default ProductDetail;

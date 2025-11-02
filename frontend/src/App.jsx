@@ -1,6 +1,8 @@
 import React from "react";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { Routes, Route } from "react-router-dom";
+import ForgotPasswordForm from './Pages/ForgotPassword';
+import ResetPasswordForm from './Pages/ResetPassword';
 import PaymentForm from './Pages/Payment';
 import AboutUsPage from './Pages/AboutUs';
 import PaymentSuccess from './pages/PaymentSuccess';
@@ -21,6 +23,9 @@ function App() {
         {/* Home */}
         <Route path="/" element={<HomePage />} />
 
+        {/* Auth */}
+        <Route path="/forgot-password" element={<ForgotPasswordForm />} />
+        <Route path="/reset-password" element={<ResetPasswordForm />} />
 
         {/* Payment & Info */}
         <Route path="/payment" element={<PaymentForm />} />
